@@ -28,4 +28,11 @@
         class="com.hectorosorio.hosocast.WebAppFragment"
         />
 
+    <com.google.android.libraries.cast.companionlibrary.widgets.MiniController
+        android:id="@+id/miniController1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone" >
+    </com.google.android.libraries.cast.companionlibrary.widgets.MiniController>
 </RelativeLayout>

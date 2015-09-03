@@ -39,6 +39,7 @@ import com.google.android.libraries.cast.companionlibrary.cast.exceptions.NoConn
 import com.google.android.libraries.cast.companionlibrary.cast.exceptions.TransientNetworkDisconnectionException;
 
 //import com.hectorosorio.hosocast.CastApplication;
+import com.hectorosorio.hosocast.CastApplication;
 import com.hectorosorio.hosocast.R;
 //import com.hectorosorio.hosocast.queue.QueueDataProvider;
 import com.hectorosorio.hosocast.utils.Utils;
@@ -62,7 +63,7 @@ public class Utils {
     /**
      * Returns the screen/display size
      *
-     * /
+     */
     public static Point getDisplaySize(Context context) {
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
@@ -73,7 +74,7 @@ public class Utils {
 
     /**
      * Returns {@code true} if and only if the screen orientation is portrait.
-     * /
+     */
     public static boolean isOrientationPortrait(Context context) {
         return context.getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_PORTRAIT;
@@ -82,7 +83,7 @@ public class Utils {
     /**
      * Shows an error dialog with a given text message.
      */
-    public static final void showErrorDialog(Context context, String errorString) {
+    public static void showErrorDialog(Context context, String errorString) {
         new AlertDialog.Builder(context).setTitle(R.string.error)
                 .setMessage(errorString)
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
@@ -96,25 +97,9 @@ public class Utils {
     }
 
     /**
-     * Shows an error dialog with a text provided by a resource ID
-     */
-    public static final void showErrorDialog(Context context, int resourceId) {
-        new AlertDialog.Builder(context).setTitle(R.string.error)
-                .setMessage(context.getString(resourceId))
-                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.cancel();
-                    }
-                })
-                .create()
-                .show();
-    }
-
-    /**
      * Shows an "Oops" error dialog with a text provided by a resource ID
      */
-    public static final void showOopsDialog(Context context, int resourceId) {
+    public static void showOopsDialog(Context context, int resourceId) {
         new AlertDialog.Builder(context).setTitle(R.string.oops)
                 .setMessage(context.getString(resourceId))
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
@@ -143,7 +128,7 @@ public class Utils {
      * </ul>
      */
     public static void handleException(Context context, Exception e) {
-        int resourceId = 0;
+        int resourceId;
         if (e instanceof TransientNetworkDisconnectionException) {
             // temporary loss of connectivity
             resourceId = R.string.connection_lost_retry;
@@ -160,9 +145,7 @@ public class Utils {
             // well, who knows!
             resourceId = R.string.failed_to_perform_action;
         }
-        if (resourceId > 0) {
-            Utils.showOopsDialog(context, resourceId);
-        }
+        Utils.showOopsDialog(context, resourceId);
     }
 
     /**
@@ -181,13 +164,6 @@ public class Utils {
     }
 
     /**
-     * Shows a (long) toast
-     */
-    public static void showToast(Context context, String msg) {
-        Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-    }
-
-    /**
      * Shows a (long) toast.
      */
     public static void showToast(Context context, int resourceId) {
@@ -196,7 +172,7 @@ public class Utils {
 
     /*
      *
-     * /
+     */
     public static boolean hitTest(View v, int x, int y) {
         final int tx = (int) (ViewCompat.getTranslationX(v) + 0.5f);
         final int ty = (int) (ViewCompat.getTranslationY(v) + 0.5f);
@@ -211,7 +187,7 @@ public class Utils {
     /**
      * Show a popup to select whether the selected item should play immediately, be added to the
      * end of queue or be added to the queue right after the current item.
-     * /
+     *
     public static void showQueuePopup(final Context context, View view, final MediaInfo mediaInfo) {
         final VideoCastManager castManager = VideoCastManager.getInstance();
         final QueueDataProvider provider = QueueDataProvider.getInstance();
@@ -234,6 +210,7 @@ public class Utils {
                 String toastMessage = null;
                 try {
                     if (provider.isQueueDetached() && provider.getCount() > 0) {
+                        Log.w(TAG, "showQueuePopup(): if count=" + provider.getCount() );
                         switch (menuItem.getItemId()) {
                             case R.id.action_play_now:
                             case R.id.action_add_to_queue:
@@ -249,19 +226,24 @@ public class Utils {
                                 return false;
                         }
                     } else {
+                        Log.w(TAG, "showQueuePopup(): else");
                         if (provider.getCount() == 0) {
+                            Log.w(TAG, "showQueuePopup(): else, if");
                             // temporary castManager.queueLoad(newItemArray, 0,
                             // temporary        MediaStatus.REPEAT_MODE_REPEAT_OFF, null);
                             ((CastApplication) context.getApplicationContext())
                                     .loadQueue(newItemArray, 0);
                         } else {
+                            Log.w(TAG, "showQueuePopup(): else, else");
                             int currentId = provider.getCurrentItemId();
                             switch (menuItem.getItemId()) {
                                 case R.id.action_play_now:
+                                    Log.w(TAG, "showQueuePopup(): action_play_now");
                                     castManager.queueInsertBeforeCurrentAndPlay(queueItem,
                                             currentId, null);
                                     break;
                                 case R.id.action_play_next:
+                                    Log.w(TAG, "showQueuePopup(): action_play_next");
                                     int currentPosition = provider.getPositionByItemId(currentId);
                                     if (currentPosition == provider.getCount() - 1) {
                                         //we are adding to the end of queue
@@ -276,6 +258,7 @@ public class Utils {
                                             R.string.queue_item_added_to_play_next);
                                     break;
                                 case R.id.action_add_to_queue:
+                                    Log.w(TAG, "showQueuePopup(): action_add_to_queue");
                                     castManager.queueAppendItem(queueItem, null);
                                     toastMessage = context.getString(
                                             R.string.queue_item_added_to_queue);
@@ -301,5 +284,26 @@ public class Utils {
 
     /**
      *
+     * @param context
+     * @param view
+     * @param mediaInfo
      */
+    public static void playNow(final Context context, View view, final MediaInfo mediaInfo) {
+        Log.d(TAG, "playNow");
+        MediaQueueItem queueItem = new MediaQueueItem.Builder(mediaInfo).setAutoplay(
+                true).setPreloadTime(CastApplication.PRELOAD_TIME_S).build();
+        Log.d(TAG, "playNow queueItem");
+
+        MediaQueueItem[] newItemArray = new MediaQueueItem[]{queueItem};
+
+        try {
+            Log.d(TAG, "playNow loadQueue");
+            ((CastApplication) context.getApplicationContext()).loadQueue(newItemArray, 0);
+            //castManager.queueInsertBeforeCurrentAndPlay(queueItem, currentId, null);
+            Log.d(TAG, "playNow loadedQueue");
+        } catch (NoConnectionException |
+                TransientNetworkDisconnectionException e) {
+            Log.e(TAG, "Failed to add item to queue or play remotely", e);
+        }
+    }
 }

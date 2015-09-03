@@ -1,4 +1,4 @@
 include ':app'
 //include '..:CastCompanionLibrary'
 include ':CastCompanionLibrary'
-project(':CastCompanionLibrary').projectDir = new File( '/Users/hector/Dev/chromecast/CastCompanionLibrary')
+project(':CastCompanionLibrary').projectDir = new File( '../CastCompanionLibrary')

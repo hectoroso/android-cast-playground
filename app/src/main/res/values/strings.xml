@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">HosoCast</string>
 
-    <string name="app_id">ABAE1BFD</string>
     <string name="app_id_PIL">44FA06E0</string>
+    <string name="app_id_TEXT">ABAE1BFD</string>
+    <string name="app_id_VIDEO">1F5D1598</string>
+    <string name="app_id">1F5D1598</string>
 
     <string name="media_route_menu_title">Play on&#8230;</string>
     <string name="action_settings">Settings</string>
@@ -15,13 +17,18 @@
     <!-- Video Cast -->
     <string name="ok">OK</string>
     <string name="error">Error</string>
+    <string name="no_video_found">No video was found</string>
 
     <!-- Error messages -->
     <!-- onApplicationConnectionFailed() errors -->
+    <string name="video_error_media_load_timeout">Media loading timed out</string>
+    <string name="video_error_server_unaccessible">Media server was not reachable</string>
+    <string name="video_error_unknown_error">Failed to load video</string>
     <string name="connection_temp_lost">Connection to the cast device is temporarily lost</string>
     <string name="connection_recovered">Connection to the cast device is recovered</string>
     <string name="connection_lost_retry">Connection to the cast device has been temporarily lost. Application is trying to recover connection, please try again later</string>
     <string name="connection_lost">No connection to the cast device exist</string>
     <string name="failed_to_perform_action">Sorry, ran into issues performing the task you wanted</string>
     <string name="oops">Oops</string>
+
 </resources>

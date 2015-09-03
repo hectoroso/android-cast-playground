@@ -1,6 +1,7 @@
 package com.hectorosorio.hosocast;
 
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.media.MediaRouter.RouteInfo;
@@ -16,8 +17,11 @@ import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumer;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumerImpl;
 
+import com.google.android.libraries.cast.companionlibrary.widgets.MiniController;
 import com.hectorosorio.hosocast.utils.NotificationUtil;
 import com.hectorosorio.hosocast.utils.Utils;
+
+import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -26,16 +30,21 @@ public class MainActivity extends AppCompatActivity {
 
     private VideoCastManager mCastManager;
     private VideoCastConsumer mCastConsumer;
+    private MiniController mMini;
     private MenuItem mediaRouteMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        VideoCastManager.checkGooglePlayServices(this);
         setContentView(R.layout.activity_main);
 
+        VideoCastManager.checkGooglePlayServices(this);
+
         mCastManager = VideoCastManager.getInstance();
+
+        // -- Adding MiniController
+        mMini = (MiniController) findViewById(R.id.miniController1);
+        mCastManager.addMiniController(mMini);
 
         mCastConsumer = new VideoCastConsumerImpl() {
 
@@ -151,13 +160,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        if (mCastManager.onDispatchVolumeKeyEvent(event, CastApplication.VOLUME_INCREMENT)) {
-            return true;
-        }
-        return super.dispatchKeyEvent(event);
+    public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
+        return mCastManager.onDispatchVolumeKeyEvent(event, CastApplication.VOLUME_INCREMENT)
+                || super.dispatchKeyEvent(event);
     }
-
     // Trigger the discovery of devices by adding the MediaRouter.Callback to the MediaRouter instance
     @Override
     protected void onStart() {
@@ -201,10 +207,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onDestroy is called");
 
         if (null != mCastManager) {
-            /*
             mMini.removeOnMiniControllerChangedListener(mCastManager);
             mCastManager.removeMiniController(mMini);
-            */
         }
         super.onDestroy();
     }
