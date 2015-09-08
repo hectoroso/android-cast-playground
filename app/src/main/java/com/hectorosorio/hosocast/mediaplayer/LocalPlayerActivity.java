@@ -50,6 +50,8 @@ import android.widget.VideoView;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.MediaInfo;
 import com.google.android.gms.cast.MediaMetadata;
+import com.google.android.gms.cast.MediaStatus;
+import com.google.android.gms.cast.RemoteMediaPlayer;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumerImpl;
 import com.google.android.libraries.cast.companionlibrary.widgets.MiniController;
@@ -207,6 +209,30 @@ public class LocalPlayerActivity extends AppCompatActivity {
                 Log.d(TAG, "onRemoteMediaPlayerMetadataUpdated()");
                 try {
                     mRemoteMediaInformation = mCastManager.getRemoteMediaInformation();
+
+                    RemoteMediaPlayer remoteMediaPlayer = mCastManager.getRemoteMediaPlayer();
+                    if (remoteMediaPlayer != null) {
+                        MediaStatus mediaStatus= remoteMediaPlayer.getMediaStatus();
+                        MediaInfo mediaInfo = remoteMediaPlayer.getMediaInfo();
+                        MediaMetadata mediaMetadata = mediaInfo.getMetadata();
+                        Log.d(TAG, "onRemoteMediaPlayerMetadataUpdated(): state=" + mediaStatus.getPlayerState() + ", title=" + mediaMetadata.getString(MediaMetadata.KEY_TITLE));
+                    }
+                } catch (Exception e) {
+                    // silent
+                }
+            }
+
+            @Override
+            public void onRemoteMediaPlayerStatusUpdated() {
+                Log.d(TAG, "onRemoteMediaPlayerStatusUpdated()");
+                try {
+                    RemoteMediaPlayer remoteMediaPlayer = mCastManager.getRemoteMediaPlayer();
+                    if (remoteMediaPlayer != null) {
+                        MediaStatus mediaStatus= remoteMediaPlayer.getMediaStatus();
+                        MediaInfo mediaInfo = remoteMediaPlayer.getMediaInfo();
+                        MediaMetadata mediaMetadata = mediaInfo.getMetadata();
+                        Log.d(TAG, "onRemoteMediaPlayerStatusUpdated(): state=" + mediaStatus.getPlayerState() + ", title=" + mediaMetadata.getString(MediaMetadata.KEY_TITLE));
+                    }
                 } catch (Exception e) {
                     // silent
                 }
@@ -343,7 +369,7 @@ public class LocalPlayerActivity extends AppCompatActivity {
                         try {
                             mCastManager.checkConnectivity();
                             //Utils.showQueuePopup(this, mPlayCircle, mSelectedMedia);
-                            Utils.playNow(this, mPlayCircle, mSelectedMedia);
+                            Utils.playNow(this, mSelectedMedia);
                         } catch (Exception e) {
                             Utils.handleException(LocalPlayerActivity.this, e);
                             return;

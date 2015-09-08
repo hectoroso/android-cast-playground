@@ -25,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:layout="@layout/web_app_fragment"
-        class="com.hectorosorio.hosocast.WebAppFragment"
+        class="com.hectorosorio.hosocast.webapp.WebAppFragment"
         />
 
     <com.google.android.libraries.cast.companionlibrary.widgets.MiniController

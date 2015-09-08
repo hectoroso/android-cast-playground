@@ -1,14 +1,14 @@
-package com.hectorosorio.hosocast;
+package com.hectorosorio.hosocast.webapp;
 
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.util.Pair;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,12 +19,15 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.ImageButton;
 
 import com.google.android.gms.cast.MediaInfo;
+import com.google.android.gms.cast.RemoteMediaPlayer;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumerImpl;
 import com.google.android.libraries.cast.companionlibrary.utils.Utils;
+import com.hectorosorio.hosocast.MainActivity;
+import com.hectorosorio.hosocast.R;
 import com.hectorosorio.hosocast.mediaplayer.LocalPlayerActivity;
 import com.hectorosorio.hosocast.utils.NotificationUtil;
 import com.hectorosorio.hosocast.video.VideoProvider;
@@ -46,8 +49,9 @@ public class WebAppFragment extends Fragment {
     public final static String hostname = "hectorpilotlytest.meteor.com";
     public final static String port = "80";
 
-    WebView webView = null;
-    View rootView = null;
+    protected WebView webView = null;
+    private View rootView = null;
+    private boolean webViewLoaded = false;
 
     private View mEmptyView;
     private View mLoadingView;
@@ -62,7 +66,15 @@ public class WebAppFragment extends Fragment {
         //return super.onCreateView(inflater, container, savedInstanceState);
         rootView = inflater.inflate(R.layout.web_app_fragment, container, false);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
+
         webView = (WebView) rootView.findViewById(R.id.webview);
+
+        // TODO use this only for debugging
+        webView.clearCache(true);
+
         //webView.setPadding(0, 0, 0, 0);
 
         // Custom AppWebViewClient to handle when web content loads
@@ -71,7 +83,7 @@ public class WebAppFragment extends Fragment {
         // Provide JavaScript to Android interface
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        webView.addJavascriptInterface(new WebAppInterface(getActivity()), "Android");
+        webView.addJavascriptInterface(new JavaScriptBridge(getActivity()), "Android");
 
         // Added to eliminate white flash before webview load
         // Based on http://stackoverflow.com/a/16217522:
@@ -100,18 +112,11 @@ public class WebAppFragment extends Fragment {
         //getLoaderManager().initLoader(0, null, this);
 
         mCastManager = VideoCastManager.getInstance();
-        mCastConsumer = new VideoCastConsumerImpl() {
-            @Override
-            public void onConnected() {
-                super.onConnected();
-                Log.d(TAG, "onConnected() ");
-            }
 
-            @Override
-            public void onDisconnected() {
-                super.onDisconnected();
-                Log.d(TAG, "onDisconnected() ");
-            }
+        mCastConsumer = new VideoCastConsumerImpl() {
+
+            // web view specific actions here
+
         };
         mCastManager.addVideoCastConsumer(mCastConsumer);
     }
@@ -130,64 +135,30 @@ public class WebAppFragment extends Fragment {
         activity.sendMessageToReceiver(message);
     }
 
-    public class WebAppInterface {
-        Context mContext;
+    public void showCastDialog() {
+        // Get a handler that can be used to post to the main thread
+        Handler mainHandler = new Handler(getActivity().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                ((MainActivity) getActivity()).showCastDialog();
+            } // This is your code
+        };
+        mainHandler.post(myRunnable);
+    }
 
-        /** Instantiate the interface and set the context */
-        WebAppInterface(Context c) {
-            mContext = c;
-        }
+    public void showNotification(String message) {
+        Log.d(TAG, "showNotification: " + message);
 
-        /** Hide the splash screen / spinner -- called when page is ready */
-        @JavascriptInterface
-        public void removeSplash() {
-            Log.d(TAG, "removeSplash");
-            hideLoadingView();
-            Toast.makeText(mContext, "removeSplash", Toast.LENGTH_SHORT).show();
-        }
-
-        /** Show a cast message from the web page */
-        @JavascriptInterface
-        public void showCast(String message) {
-            Log.d(TAG, "showCast: " + message);
-            MainActivity activity = (MainActivity) getActivity();
-            activity.sendMessageToReceiver(message);
-        }
-
-        /** Show a toast from the web page */
-        @JavascriptInterface
-        public void showVideo(String data) {
-            Log.d(TAG, "showVideo: " + data);
-            viewVideo(data);
-        }
-
-        /** Show a toast from the web page */
-        @JavascriptInterface
-        public void showToast(String toast) {
-            Log.d(TAG, "showToast: " + toast);
-            Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
-        }
-
-        /** Show a cast message from the web page */
-        @JavascriptInterface
-        public void showNotification(String message) {
-            Log.d(TAG, "showNotification: " + message);
-
-            Timer timer = new Timer();
-            timer.schedule(new MyTimerTask(message) {
+        Timer timer = new Timer();
+        timer.schedule(new MyTimerTask(message) {
                 /*
                 @Override
                 public void run() {
                     sendNotification(message);
                 }
                 */
-            }, 15 * 1000);
-        }
-
-        @JavascriptInterface
-        public boolean isCasting() {
-            return mCastManager.isConnected();
-        }
+        }, 15 * 1000);
     }
 
     class MyTimerTask extends TimerTask {
@@ -205,7 +176,14 @@ public class WebAppFragment extends Fragment {
     }
 
     public void hideLoadingView() {
-        rootView.findViewById(R.id.progress_indicator).setVisibility(View.GONE);
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+            // This code will always run on the UI thread, therefore is safe to modify UI elements.
+            rootView.findViewById(R.id.progress_indicator).setVisibility(View.GONE);
+            webViewLoaded = true;
+            }
+        });
     }
 
     public void viewVideo(String data) {
@@ -228,5 +206,100 @@ public class WebAppFragment extends Fragment {
         catch(JSONException ex) {
             ex.printStackTrace();
         }
+    }
+
+    public void notifyWebApp(int status) {
+        if (webViewLoaded) {
+            webView.loadUrl("javascript:onCastEvent(" + status + ")");
+        }
+    }
+
+    public void callWebAppFunction(String function) {
+        if (webViewLoaded) {
+            webView.loadUrl("javascript:" + function);
+        }
+    }
+
+    private MediaInfo mSelectedMedia;
+    private ImageButton mPlayCircle;
+
+    public void playCastVideo(MediaInfo selectedMedia) {
+        RemoteMediaPlayer remoteMediaPlayer = mCastManager.getRemoteMediaPlayer();
+
+        mSelectedMedia = selectedMedia;
+        /*
+        mPlayCircle = (ImageButton) rootView.findViewById(R.id.play_circle);
+        mPlayCircle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                togglePlayback();
+            }
+        });
+*/
+        int position = 0;
+        Log.d(TAG, "playCastVideo remoteMediaPlayer: " + (remoteMediaPlayer == null ? "NULL" : remoteMediaPlayer.getNamespace()));
+        /*
+        try {
+            mCastManager.loadMedia(selectedMedia, true, position);
+        } catch (Exception e) {
+            Log.d(TAG, "playCastVideo loadMedia Exception: ", e);
+        }
+        */
+        try {
+            //mCastManager.play(position);
+            com.hectorosorio.hosocast.utils.Utils.playNow(getActivity(), mSelectedMedia);
+        } catch (Exception e) {
+            Log.d(TAG, "playCastVideo Exception: ", e);
+        }
+    }
+
+    public static enum PlaybackState {
+        PLAYING, PAUSED, BUFFERING, IDLE
+    }
+    private PlaybackState mPlaybackState;
+
+    private void togglePlayback() {
+        Log.d(TAG, "togglePlayback");
+        switch (mPlaybackState) {
+            case PAUSED:
+                Log.d(TAG, "togglePlayback PAUSED");
+                try {
+                    mCastManager.checkConnectivity();
+                    mCastManager.play();
+                    mPlaybackState = PlaybackState.PLAYING;
+                } catch (Exception e) {
+                    Log.d(TAG, "togglePlayback PAUSED Exception", e);
+                    return;
+                }
+                break;
+
+            case PLAYING:
+                Log.d(TAG, "togglePlayback PLAYING");
+                try {
+                    mCastManager.checkConnectivity();
+                    mCastManager.pause();
+                    mPlaybackState = PlaybackState.PAUSED;
+                } catch (Exception e) {
+                    Log.d(TAG, "togglePlayback PLAYING Exception", e);
+                    return;
+                }
+                break;
+
+            case IDLE:
+                Log.d(TAG, "togglePlayback IDLE Remote");
+                try {
+                    mCastManager.checkConnectivity();
+                    mCastManager.play();
+                    mPlaybackState = PlaybackState.PLAYING;
+                } catch (Exception e) {
+                    Log.d(TAG, "togglePlayback IDLE Exception", e);
+                    return;
+                }
+                break;
+        }
+    }
+
+    public VideoCastManager getCastManager() {
+        return mCastManager;
     }
 }

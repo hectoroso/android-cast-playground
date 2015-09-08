@@ -23,7 +23,6 @@ import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.support.v4.view.ViewCompat;
-import android.support.v7.widget.PopupMenu;
 import android.util.Log;
 import android.view.Display;
 import android.view.MenuItem;
@@ -42,7 +41,6 @@ import com.google.android.libraries.cast.companionlibrary.cast.exceptions.Transi
 import com.hectorosorio.hosocast.CastApplication;
 import com.hectorosorio.hosocast.R;
 //import com.hectorosorio.hosocast.queue.QueueDataProvider;
-import com.hectorosorio.hosocast.utils.Utils;
 
 import java.io.IOException;
 
@@ -285,10 +283,9 @@ public class Utils {
     /**
      *
      * @param context
-     * @param view
      * @param mediaInfo
      */
-    public static void playNow(final Context context, View view, final MediaInfo mediaInfo) {
+    public static void playNow(final Context context, final MediaInfo mediaInfo) {
         Log.d(TAG, "playNow");
         MediaQueueItem queueItem = new MediaQueueItem.Builder(mediaInfo).setAutoplay(
                 true).setPreloadTime(CastApplication.PRELOAD_TIME_S).build();
